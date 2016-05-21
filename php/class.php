@@ -29,7 +29,11 @@ class FileWriter {
     public function __construct($filepath, $stream = true, $requireLock = true)
     {
         $this->path = $filepath;
-        $this->requireLock = $requireLock;
+        if (strpos($filepath, 'php://') === 0) {
+            $this->requireLock = false;
+        } else {
+            $this->requireLock = $requireLock;
+        }
         $this->stream = $stream;
     }
 

@@ -13,6 +13,7 @@ $opt = getopt('', [
     'out::', // ファイル出力。未指定の場合には標準出力を使用する
     'start::', // ファイルの読込開始秒. これよりも早い場合には切り捨てられる。
     'end::', // ファイルの読込終了秒. これよりも遅いエントリを読み込んだ場合には終了する
+    'nostream:', // ストリームモードを使用しない
 ]);
 
 // 割り込み(Ctrl+C)時に適切な終了処理を行う。割り込み処理が行えない場合には無視する
@@ -24,9 +25,9 @@ if (function_exists('pcntl_signal')) {
 $out = (isset($opt['opt']) ? $opt['out'] : "php://stdout");
 $start = isset($opt['start']) ? $opt['start'] : false;
 $end = isset($opt['end']) ? $opt['end'] : false;
+$nostream = isset($opt['nostream']) ? $opt['nostream'] : false;
 
-
-$writer = new FileWriter($out, false);
+$writer = new FileWriter($out, !$nostream);
 $writer->open();
 
 // 標準入力の準備を行う
@@ -126,8 +127,10 @@ class SlowLogReader
                 break;
 
             $line = substr(trim($line), 2);
-            if (preg_match('{^/# Time: ([0-9: ])/$}', $line, $m)) {
+            if (preg_match('{^Time: ([0-9: ]+)$}', $line, $m)) {
                 $params['Time'] = $m[1];
+            } else if (preg_match('{^User@Host: (.*)$}', $line, $m)) {
+                $params['User@Host'] = $m[1];
             } else {
                 foreach (explode('  ', $line) as $kv) {
                     list($k, $v) = explode(': ', $kv, 2);
@@ -141,7 +144,7 @@ class SlowLogReader
         $params['body'] = $sql;
 
         // タイムスタンプを設定する
-        if ($params['Time']) {
+        if (isset($params['Time'])) {
             $params['Time'] = $this->parseTime($params['Time']);
             $this->lastEntryTime = $params['Time'];
         } else {

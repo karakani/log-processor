@@ -17,9 +17,10 @@ if (!function_exists('imagecreate')) {
 
 // 準備を行う
 $opt = getopt('', [
-    'in::', // ファイル入力。未指定の場合には標準入力を使用する
+    'in::', // ファイル入力。未指定の場合には標準入力を使用し、ストリームモードとして解釈する
     'out::', // ファイル出力。未指定の場合にはエラー終了する
     'start:', // 出力開始日時
+    'end:', // 出力開始日時
     'width:', // 出力画像幅
     'height:', // 出力画像高さ
 ]);
@@ -37,21 +38,47 @@ if (empty($opt['height'])) {
 }
 
 if (empty($opt['start'])) {
-    throw new \Exception('Output image height parameter(--start) is required.');
+    throw new \Exception('Start time parameter(--start) is required.');
 }
+
+if (empty($opt['end'])) {
+    throw new \Exception('End time parameter(--end) is required.');
+}
+
 
 // JSONファイルの読込を行い、画像を出力する
-$input = isset($opt['in']) ? $opt['in'] : 'php://stdin';
+$source = isset($opt['in']) ? $opt['in'] : fopen('php://stdin', 'r');
+$generator = read($source);
 
-$json = json_decode(file_get_contents($input));
-
-$writer = new HeatmapWriter($opt['out'], $opt['start'], $opt['width'], $opt['height']);
-foreach ($json->entries as $e) {
+$writer = new HeatmapWriter($opt['out'], $opt['start'], $opt['end'], $opt['width'], $opt['height']);
+foreach ($generator as $e) {
     $writer->put($e);
 }
-
 $writer->writeFile();
 
+if (is_resource($source)) {
+    fclose($source);
+}
+
+
+
+/**
+ * @param $source
+ * @return Generator
+ */
+function read($source)
+{
+    if (is_resource($source)) {
+        while ($line = fgets($source)) {
+            yield json_decode($line);
+        }
+    } else {
+        $json = json_decode(file_get_contents($source));
+        foreach ($json->entries as $e) {
+            yield $e;
+        }
+    }
+}
 
 class HeatmapWriter
 {
@@ -61,11 +88,14 @@ class HeatmapWriter
     private $width;
     private $height;
 
-    private $firstTime = false;
+    private $startTime;
+    private $endTime;
+    private $pixelScale;
+
     private $scaleArray = [];
     private $maxValue = 0;
 
-    public function __construct($path, $start, $width, $height)
+    public function __construct($path, $start, $end, $width, $height)
     {
         if (empty($path)) {
             throw new \Exception('Invalid path exception.');
@@ -74,7 +104,10 @@ class HeatmapWriter
         $this->path = $path;
         $this->width = $width;
         $this->height = $height;
-        $this->firstTime = $start;
+
+        $this->startTime = $start;
+        $this->endTime = $end;
+        $this->pixelScale = $width / ($end - $start);
 
         $this->scaleArray = array_fill(0, $width, 0);
 
@@ -101,7 +134,7 @@ class HeatmapWriter
      */
     public function writeFile()
     {
-        foreach (range(0, $this->width) as $x) {
+        foreach (range(0, $this->width - 1) as $x) {
             $color = $this->int2color($this->scaleArray[$x]);
 
             imagerectangle($this->image, $x, 0, $x + 1, $this->height, $color);
@@ -123,27 +156,28 @@ class HeatmapWriter
     }
 
     /**
-     * @param $second
+     * @param $from
+     * @param $to
      */
-    private function addPoint($second)
+    private function addPoint($from, $to)
     {
-        $xFrom = $this->calcLeftPoint($second);
-        $xTo = $this->calcLeftPoint($second);
+        $xFrom = $this->calcLeftPoint($from);
+        $xTo = $this->calcLeftPoint($to);
 
         $x = $xFrom;
 
-        while ($x <= $xTo and $x < $this->width) {
+        while ($x <= $xTo and $x < $this->width - 1) {
             $this->scaleArray[$x]++;
 
             $x++;
         }
 
         $this->scaleArray[$x]++;
-        $this->maxValue = max($this->maxValue,$this->scaleArray[$x]);
+        $this->maxValue = max($this->maxValue, $this->scaleArray[$x]);
     }
 
     private function calcLeftPoint($second)
     {
-        return floor(($second - $this->firstTime) *1024 /86400);
+        return floor(($second - $this->startTime) * $this->pixelScale);
     }
 }
