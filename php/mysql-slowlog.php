@@ -27,7 +27,7 @@ $start = isset($opt['start']) ? $opt['start'] : false;
 $end = isset($opt['end']) ? $opt['end'] : false;
 $nostream = isset($opt['nostream']) ? $opt['nostream'] : false;
 
-$writer = new FileWriter($out, !$nostream);
+$writer = new JsonWriter($out, !$nostream);
 $writer->open();
 
 // 標準入力の準備を行う

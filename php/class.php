@@ -6,8 +6,8 @@
  *
  * @property array params miscellaneous params
  */
-
-class Entry {
+class Entry
+{
     /** @var int required. */
     public $start;
     /** @var int optional. */
@@ -16,14 +16,24 @@ class Entry {
     public $title;
 }
 
-class FileWriter {
+interface Writer
+{
+    public function open();
+
+    public function close();
+
+    public function write(Entry $e);
+}
+
+abstract class FileWriter implements Writer
+{
     private $path;
-    private $fp = null;
+    protected $fp = null;
     /**
      * ファイルのストリーム出力機能。
      * この機能を使用する場合、統計情報が記録されたヘッダーやフッターを出力しない
      */
-    private $stream;
+    protected $stream;
     private $requireLock;
 
     public function __construct($filepath, $stream = true, $requireLock = true)
@@ -52,18 +62,10 @@ class FileWriter {
                 }
             }
         }
-
-        if (!$this->stream) {
-            fwrite($this->fp, '{"entries":[');
-        }
     }
 
     public function close()
     {
-        if (!$this->stream) {
-            fwrite($this->fp, ']}');
-        }
-
         fflush($this->fp);
 
         if ($this->requireLock) {
@@ -73,8 +75,21 @@ class FileWriter {
         fclose($this->fp);
         $this->fp = null;
     }
+}
 
+class JsonWriter extends FileWriter
+{
     private $count = 0;
+
+    public function open()
+    {
+        parent::open();
+
+        if (!$this->stream) {
+            fwrite($this->fp, '{"entries":[');
+        }
+    }
+
     public function write(Entry $e)
     {
         if (!$this->stream) {
@@ -96,5 +111,14 @@ class FileWriter {
         if ($this->stream) {
             fwrite($this->fp, "\r\n");
         }
+    }
+
+    public function close()
+    {
+        if (!$this->stream) {
+            fwrite($this->fp, ']}');
+        }
+
+        parent::close();
     }
 }
