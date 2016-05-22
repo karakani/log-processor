@@ -4,6 +4,8 @@
  * Date: 2016/05/21
  */
 
+namespace LogProcessor;
+
 require realpath(__DIR__ . DIRECTORY_SEPARATOR . 'class.php');
 
 date_default_timezone_set('Asia/Tokyo');
@@ -27,8 +29,12 @@ $start = isset($opt['start']) ? $opt['start'] : false;
 $end = isset($opt['end']) ? $opt['end'] : false;
 $nostream = isset($opt['nostream']) ? $opt['nostream'] : false;
 
-$writer = new JsonWriter($out, !$nostream);
+$writer = new XmlWriter($out, !$nostream);
 $writer->open();
+
+if ($start and $end) {
+    $writer->setTimeInfo($start, $end);
+}
 
 // 標準入力の準備を行う
 $reader = new SlowLogReader('php://stdin');
@@ -65,6 +71,7 @@ class SlowLogReader
     private $fp;
     private $bufferedLine = [];
     private $lastEntryTime = null;
+    private $reading = false;
 
     public function __construct($path)
     {
@@ -74,9 +81,6 @@ class SlowLogReader
             throw new \Exception('File cannot be opened: ' . $path);
         }
     }
-
-
-    private $reading = false;
 
     function readEntry()
     {

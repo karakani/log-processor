@@ -6,6 +6,8 @@
  * Time: 18:24
  */
 
+namespace LogProcessor;
+
 require realpath(__DIR__ . DIRECTORY_SEPARATOR . 'class.php');
 
 date_default_timezone_set('Asia/Tokyo');
@@ -130,32 +132,6 @@ class HeatmapWriter
     }
 
     /**
-     *
-     */
-    public function writeFile()
-    {
-        foreach (range(0, $this->width - 1) as $x) {
-            $color = $this->int2color($this->scaleArray[$x]);
-
-            imagerectangle($this->image, $x, 0, $x + 1, $this->height, $color);
-            imagecolordeallocate($this->image, $color);
-        }
-
-        imagepng($this->image, $this->path);
-        imagedestroy($this->image);
-    }
-
-    /**
-     * @param $int
-     * @return int
-     */
-    private function int2color($int)
-    {
-        $scaled = ceil(255 - ($int * 255 / $this->maxValue));
-        return imagecolorallocate($this->image, $scaled, $scaled, $scaled);
-    }
-
-    /**
      * @param $from
      * @param $to
      */
@@ -179,5 +155,31 @@ class HeatmapWriter
     private function calcLeftPoint($second)
     {
         return floor(($second - $this->startTime) * $this->pixelScale);
+    }
+
+    /**
+     *
+     */
+    public function writeFile()
+    {
+        foreach (range(0, $this->width - 1) as $x) {
+            $color = $this->int2color($this->scaleArray[$x]);
+
+            imagerectangle($this->image, $x, 0, $x + 1, $this->height, $color);
+            imagecolordeallocate($this->image, $color);
+        }
+
+        imagepng($this->image, $this->path);
+        imagedestroy($this->image);
+    }
+
+    /**
+     * @param $int
+     * @return int
+     */
+    private function int2color($int)
+    {
+        $scaled = ceil(255 - ($int * 255 / $this->maxValue));
+        return imagecolorallocate($this->image, $scaled, $scaled, $scaled);
     }
 }
