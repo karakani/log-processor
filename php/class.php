@@ -111,6 +111,8 @@ class XmlWriter extends FileWriter
     static private function createNode($name, array $e, array $textNodeKeys = [], $useCDATA = true)
     {
         $data = (array)$e;
+
+        // 非効率なコードのため修正したほうがいい
         $attr = self::createAttrString($data, $textNodeKeys);
         $child = self::createChildNode($data, $textNodeKeys);
         $text = self::findTextNode($data, $textNodeKeys, $useCDATA);

@@ -11,10 +11,44 @@
 
     <xsl:template match="archive">
         <html>
+            <head>
+                <style type="text/css">
+                    #summary {
+                    font-size: 10px;
+                    margin-top: 15px;
+                    }
+                    #console {
+                    font-size: 10px;
+                    }
+                    .legend {
+                    font-size: 10px;
+                    }
+                    #console {
+                    background-color: #EEE;
+                    }
+                    line {
+                    stroke: rgb(255,0,0);
+                    }
+                    line.SELECT {
+                    stroke: rgb(128,128,255);
+                    }
+                    line.INSERT {
+                    stroke: rgb(255,0,255);
+                    }
+                    line.UPDATE {
+                    stroke: rgb(0,255,0);
+                    }
+                    line.DELETE {
+                    stroke: rgb(0,255,255);
+                    }
+                    line.DESCRIBE {
+                    stroke: rgb(255,128,128);
+                    }
+                </style>
+            </head>
             <body style="margin: 0; padding: 0; position: absolute; width: 100%; height: 100%;">
                 <div style="position: absolute; top: 0; left: 0; right: 0;">
-                    <h1>Log</h1>
-                    <table>
+                    <table id="summary">
                         <tbody>
                             <tr>
                                 <th>Begins at</th>
@@ -36,8 +70,10 @@
                             </tr>
                         </tbody>
                     </table>
+                    <pre id="console"></pre>
                 </div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 1em; overflow: hidden;" id="legend">
+                <div class="legend"
+                     style="position: absolute; top: 0; left: 0; right: 0; height: 20px; overflow: hidden;" id="legend">
                     <xsl:call-template name="legend_x">
                         <xsl:with-param name="base" select="meta/@begin"/>
                         <xsl:with-param name="n" select="(meta/@end - meta/@begin) div 60"/>
@@ -69,10 +105,15 @@
                 </div>
                 <script>
                     var legend = document.getElementById('legend');
+                    var console = document.getElementById('console');
                     document.getElementById('canvas')
                             .addEventListener('scroll', function (e) {
                                 legend.style.left = (e.target.scrollLeft * -1) + 'px';
                             });
+                    function showDetail(node) {
+                    console.innerHTML = node.getAttribute('data-table') + '&lt;br/>' + node.getAttribute('data-command')
+                    + '&lt;br/>' + node.getAttribute('data-sql');
+                    }
                 </script>
             </body>
         </html>
@@ -94,14 +135,23 @@
             <xsl:attribute name="y2">
                 <xsl:value-of select="position()"/>
             </xsl:attribute>
-            <xsl:attribute name="style">stroke:rgb(255,0,0);stroke-width:1</xsl:attribute>
+            <xsl:attribute name="style">stroke-width:1</xsl:attribute>
             <xsl:attribute name="data-lock-time">
                 <xsl:value-of select="params/@Lock_time"/>
             </xsl:attribute>
             <xsl:attribute name="data-sql">
                 <xsl:value-of select="params"/>
             </xsl:attribute>
-            <xsl:attribute name="onmouseover">console.log(this.getAttribute('data-sql'))</xsl:attribute>
+            <xsl:attribute name="data-table">
+                <xsl:value-of select="@table"/>
+            </xsl:attribute>
+            <xsl:attribute name="data-command">
+                <xsl:value-of select="@command"/>
+            </xsl:attribute>
+            <xsl:attribute name="class">
+                <xsl:value-of select="@table"/><xsl:text> </xsl:text><xsl:value-of select="@command"/>
+            </xsl:attribute>
+            <xsl:attribute name="onmouseover">showDetail(this)</xsl:attribute>
         </xsl:element>
     </xsl:template>
 
@@ -144,7 +194,6 @@
             <xsl:attribute name="style">
                 position: absolute;
                 left: <xsl:value-of select="$i * 60"/>px;
-                font-size: 9pt;
             </xsl:attribute>
             <xsl:value-of select="format-number(floor($i div 60), '00')"/>:<xsl:value-of
                 select="format-number(($i mod 60), '00')"/>

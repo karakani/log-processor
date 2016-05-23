@@ -159,6 +159,17 @@ class SlowLogReader
         $entry->end = $params['Time'] + $params['Query_time'];
         $entry->params = $params;
 
+        // SQLからテーブル名とStatementの種類を取得する
+        if (preg_match('{SET timestamp=[0-9]+;\s*([a-zA-Z]+)\s}m', $entry->params['body'], $m)) {
+            $entry->command = $m[1];
+        }
+
+        // WARN: This code may be inaccurate when a query has sub query.
+        // 警告: このコードはサブクエリが含まれる場合に正しく動作しないことがあります。
+        if (preg_match('{SET timestamp=[0-9]+;\s*.+(FROM|INTO|DESCRIBE)\s+`?([a-zA-Z0-9_]+)`?}', $entry->params['body'], $m)) {
+            $entry->table = $m[2];
+        }
+
         return $entry;
     }
 
