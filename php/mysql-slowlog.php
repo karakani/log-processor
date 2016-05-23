@@ -16,6 +16,7 @@ $opt = getopt('', [
     'start::', // ファイルの読込開始秒. これよりも早い場合には切り捨てられる。
     'end::', // ファイルの読込終了秒. これよりも遅いエントリを読み込んだ場合には終了する
     'nostream:', // ストリームモードを使用しない
+    'format::', // フォーマットを指定する
 ]);
 
 // 割り込み(Ctrl+C)時に適切な終了処理を行う。割り込み処理が行えない場合には無視する
@@ -28,8 +29,19 @@ $out = (isset($opt['opt']) ? $opt['out'] : "php://stdout");
 $start = isset($opt['start']) ? $opt['start'] : false;
 $end = isset($opt['end']) ? $opt['end'] : false;
 $nostream = isset($opt['nostream']) ? $opt['nostream'] : false;
+$format = isset($opt['format']) ? $opt['format'] : false;
 
-$writer = new XmlWriter($out, !$nostream);
+switch(strtolower($format)) {
+    case 'xml':
+        $writer = new XmlWriter($out, !$nostream);
+        break;
+
+    case 'json':
+    default:
+        $writer = new JsonWriter($out, !$nostream);
+        break;
+}
+
 $writer->open();
 
 if ($start and $end) {
