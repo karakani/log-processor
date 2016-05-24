@@ -234,3 +234,15 @@ function escape_attr_name($str)
 {
     return preg_replace('{[^:A-Za-z_0-9.-]}', '-', $str);
 }
+
+function string2time($str) {
+    // I know these codes are not work after 2033 May 18
+    if (time() > 2000000000) die ('This code does not work!! Fix me at line ' . __LINE__ . ' on ' . __FILE__ . '!!');
+
+    if (is_string($str) and is_numeric($str) and strlen($str) == 10 and $str[0] == '1') {
+        return $str;
+    } else {
+        // strtotime will do the job.
+        return strtotime($str);
+    }
+}

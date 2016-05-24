@@ -52,7 +52,7 @@ if (empty($opt['end'])) {
 $source = isset($opt['in']) ? $opt['in'] : fopen('php://stdin', 'r');
 $generator = read($source);
 
-$writer = new HeatmapWriter($opt['out'], $opt['start'], $opt['end'], $opt['width'], $opt['height']);
+$writer = new HeatmapWriter($opt['out'], string2time($opt['start']), string2time($opt['end']), $opt['width'], $opt['height']);
 foreach ($generator as $e) {
     $writer->put($e);
 }

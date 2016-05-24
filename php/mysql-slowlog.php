@@ -26,8 +26,8 @@ if (function_exists('pcntl_signal')) {
 
 // 標準出力の準備を行う
 $out = (isset($opt['opt']) ? $opt['out'] : "php://stdout");
-$start = isset($opt['start']) ? $opt['start'] : false;
-$end = isset($opt['end']) ? $opt['end'] : false;
+$start = isset($opt['start']) ? string2time($opt['start']) : false;
+$end = isset($opt['end']) ? string2time($opt['end']) : false;
 $nostream = isset($opt['nostream']) ? $opt['nostream'] : false;
 $format = isset($opt['format']) ? $opt['format'] : false;
 
